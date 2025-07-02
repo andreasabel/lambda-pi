@@ -15,6 +15,7 @@ data TypeError : Set where
   notInferable : Exp → _
   notLeqLevels : Lvl → Lvl → _
   notSubtype   : Exp → Exp → _
+  notEquals    : Exp → Exp → _
 
 printTypeError : TypeError → String
 printTypeError (notAType e)       = "Not a type: " <> printExp e
@@ -24,6 +25,7 @@ printTypeError (notAFunction e A) = printExp e <> " has type " <> printExp A <> 
 printTypeError (notInferable e)   = "Not an inferable term: " <> printExp e
 printTypeError (notLeqLevels l l') = "Level " <> printNat l <> " is not less or equal to " <> printNat l'
 printTypeError (notSubtype A B)   = printExp A <> " is not a subtype of " <> printExp B
+printTypeError (notEquals A B)    = printExp A <> " is not equal to " <> printExp B
 
 open ErrorMonad {E = TypeError} public using () renaming (Error to TC)
 open ErrorMonad {E = TypeError} using (fail; return; _>>=_; _>>_; _>=>_; _=<<_; _<$>_; liftM2)
@@ -55,10 +57,17 @@ notFunction Σ t A = fail (notAFunction (printTm Δ t) (printTm Δ A))
 cannotInfer : ∀{A : Set} → Defs n → Tm n → TC A
 cannotInfer Σ t = fail (notInferable (printTm (cxt Σ) t))
 
--- Equality error "not subtype
+-- Equality error "not subtype"
 
 notSubtypes : ∀{A : Set} → Defs n → Tm n → Tm n → TC A
 notSubtypes Σ A B = fail (notSubtype (printTm Δ A) (printTm Δ B))
+  where
+    Δ = cxt Σ
+
+-- Equality error "not equal"
+
+notEqual : (Σ : Defs n) (t t' : Tm n) → TC (Tm n)
+notEqual Σ A B = fail (notSubtype (printTm Δ A) (printTm Δ B))
   where
     Δ = cxt Σ
 
@@ -85,12 +94,12 @@ toSubst (Σ Defs.▷ d) = wkS (toSubst Σ) ▷ toTm d
 --   where
 --     σ = toSubst Σ
 
--- Close a def wrt. an already flattened list of defs
+-- -- Close a def wrt. an already flattened list of defs
 
-closeDef : Defs n → Def n → Def n
-closeDef Σ (A.def x A m) = A.def x (sub σ A) (Maybe.map (sub σ) m)
-  where
-    σ = toSubst Σ
+-- closeDef : Defs n → Def n → Def n
+-- closeDef Σ (A.def x A m) = A.def x (sub σ A) (Maybe.map (sub σ) m)
+--   where
+--     σ = toSubst Σ
 
 -- -- Transform a list of definitions such that each is independent of the previous ones
 
@@ -128,9 +137,15 @@ leqLevel l l' with l ℕ.≤? l'
 ... | yes _ = return _
 ... | no _  = fail (notLeqLevels l l')
 
+equalLevel : (l l' : Lvl) → TC ⊤
+equalLevel l l' with l ℕ.≟ l'
+... | yes _ = return _
+... | no _  = fail (notLeqLevels l l')  -- TODO
+
 {-# TERMINATING #-}
 mutual
   -- Check subsumption of whnfs
+
   subType : (Σ : Defs n) (A B : Tm n) → TC ⊤
   subType Σ (univ l) (univ l') = leqLevel l l'
   subType Σ A@(univ _) B         = notSubtypes Σ A B
@@ -143,19 +158,51 @@ mutual
   subType Σ A B = do
     _ ← equalInferable Σ A B
     return _
-    -- where
-    --   notSubtypes Σ A B : TC ⊤
-    --   notSubtypes Σ A B = {!!}
 
   -- isUniv : Defs n → Tm n → TC Lvl
   -- isUniv Σ A = case whnf A of λ where
   --   (univ l) → return l
   --   _ → notUniverse Σ A
 
+  -- Structural equality.
+  --
+  -- Precondition: arguments are in whnf.
   equalInferable : (Σ : Defs n) (A B : Tm n) → TC (Tm n)
-  equalInferable Σ A B = TODO
+
+  -- Neutrals:
+  equalInferable Σ t@(var x) t'@(var x') with x Fin.≟ x'
+  ... | yes _ = lookupType Σ x
+  ... | no  _ = notEqual Σ t t'
+  equalInferable Σ a@(app t u) a'@(app t' u') = do
+    pi x A B ← whnf <$> equalInferable Σ t t' where _ → notEqual Σ a a'
+    equalCheckable Σ u u' (whnf A)
+    return (subst1 (close Σ u) B)
+
+  -- Types:
+  equalInferable Σ (univ l) (univ l') = do
+    equalLevel l l'
+    return (univ (suc l))
+  equalInferable Σ t@(pi x A B) t'@(pi x' A' B') = do
+    univ l ← equalInferable Σ (whnf A) (whnf A')
+      where _ → notEqual Σ t t'
+    univ l' ← equalInferable (ext Σ x A) (whnf B) (whnf B')
+      where _ → notEqual Σ t t'
+    return (univ (l ℕ.⊔ l'))
+
+  equalInferable Σ t t' = notEqual Σ t t'
+
+  -- Type directed equality.
+  --
+  -- Precondition: Type is in whnf.
+  equalCheckable : (Σ : Defs n) (t u C : Tm n) → TC ⊤
+  equalCheckable Σ t t' (pi x A B) = do
+    equalCheckable (ext Σ x A) (eta t) (eta t') (whnf B)
     where
-      TODO = return A
+      eta : Tm n → Tm (suc n)
+      eta t = app (wk t) (var zero)
+  equalCheckable Σ t t' C = do
+    _ ← equalInferable Σ (whnf t) (whnf t')
+    return _
 
 ---------------------------------------------------------------------------
 -- Checking terms and types

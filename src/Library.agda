@@ -87,6 +87,8 @@ module ℕ where
 
 module Fin where
 
+  open import Data.Fin.Properties public using (_≟_)
+
   fromℕ : (n : ℕ) (m : ℕ) → Fin (suc (n + m))
   fromℕ zero    m = zero
   fromℕ (suc n) m = suc (fromℕ n m)
