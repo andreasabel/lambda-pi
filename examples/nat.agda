@@ -1,6 +1,6 @@
 
 Nat : Set1
-Nat = (A : Set0) → (A → A) → (A → A)
+Nat = (A : Set) → (A → A) → (A → A)
 
 zero : Nat
 zero = λ A s z → z

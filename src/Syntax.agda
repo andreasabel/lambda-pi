@@ -1,13 +1,17 @@
 -- Internal syntax of Lambda-Pi (de Bruijn)
 
-module Syntax (Name : Set) where
+module Syntax where
 
 open import Library
 
+-- Variables are de Bruijn indices
+Var = Fin
+
+-- Names are suggestions how to print an index
+Name = String
+
 variable
   n m : ℕ
-
-Var = Fin
 
 -- Terms
 

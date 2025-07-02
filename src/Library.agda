@@ -83,6 +83,7 @@ module Bool where
 module ℕ where
   open import Data.Nat.Base public
   open import Data.Nat.Properties public
+  open import Data.Nat.Show public
 
 module Fin where
 
@@ -310,6 +311,12 @@ module List⁺ where
 module String where
   open import Data.String.Base public
 
+  drop : ℕ → String → String
+  drop zero s = s
+  drop (suc n) s with uncons s
+  ... | just (_ , s') = drop n s'
+  ... | nothing = s
+
 -- Pretty printing
 
 parens : String → String
@@ -397,6 +404,9 @@ module ErrorMonad {e} {E : Set e} where
   _>>=_ : ∀{a b} {A : Set a} {B : Set b} → Error A → (A → Error B) → Error B
   fail err >>= k = fail err
   ok   a   >>= k = k a
+
+  _=<<_ : ∀{a b} {A : Set a} {B : Set b} → (A → Error B) → Error A → Error B
+  k =<< m = m >>= k
 
   _>=>_ : ∀{a b c} {A : Set a} {B : Set b} {C : Set c} → (A → Error B) → (B → Error C) → A → Error C
   (f >=> g) a = f a >>= g
