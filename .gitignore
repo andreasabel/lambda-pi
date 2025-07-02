@@ -1,0 +1,15 @@
+# Build directories
+.stack-work/
+dist-newstyle/
+MAlonzo/
+_build/
+/src/LamPi/
+
+# Generated files
+*~
+*.agdai
+*.bak
+*.hi
+*.o
+/lampi.cabal
+stack*.yaml.lock

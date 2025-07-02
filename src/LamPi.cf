@@ -1,0 +1,32 @@
+-- Dependently typed lambda calculus with definitions.
+-- Syntax compatible with Agda.
+
+-- A file is a list of declarations that are either postulates or definitions.
+
+layout toplevel;
+layout "postulate";
+
+entrypoints [Decl];
+
+Block. Block ::= "{" [Decl] "}" ;
+terminator Decl ";";
+
+DAx.   Decl ::= "postulate" Block;
+DDecl. Decl ::= Ident ":" Exp ;
+Def.   Decl ::= Ident "=" Exp ;
+
+-- Expressions
+
+EType.  Exp3 ::= Univ;
+EId.    Exp3 ::= Ident;
+EApp.   Exp2 ::= Exp2 Exp3;
+EFun.   Exp1 ::= Exp1 "→" Exp;
+EAbs.   Exp  ::= "λ" [Ident] "→" Exp;
+EPi.    Exp  ::= "(" [Ident] ":" Exp ")" "→" Exp;
+
+coercions Exp 3;
+separator nonempty Ident "";
+
+-- Universes
+
+token Univ {"Set"} (digit *);

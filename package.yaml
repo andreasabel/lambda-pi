@@ -1,0 +1,20 @@
+name: lampi
+
+executables:
+  lampi:
+    source-dirs: src
+    main: MAlonzo.Code.Main
+
+    # exclude some modules
+    when:
+      condition: false
+      other-modules:
+        - LamPi.Skel
+        - LamPi.Test
+
+dependencies:
+- array
+- base
+- filepath
+- process
+- text
