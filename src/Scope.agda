@@ -34,7 +34,7 @@ printScopeError (notInScope x)  = "Not in scope: " <> x
 printScopeError (notUniverse x) = "Not a valid universe: " <> x
 
 open ErrorMonad {E = ScopeError} public using () renaming (Error to Scope)
-open ErrorMonad {E = ScopeError} using (Error; fail; return; _>>=_; _>=>_; _=<<_; _<$>_; liftM2)
+open ErrorMonad {E = ScopeError} using (fail; return; _>>=_; _>=>_; _=<<_; _<$>_; liftM2)
 
 -- Helper: parse a universe level (decimal number)
 
@@ -66,7 +66,7 @@ scopeExp : Exp → Cxt n → Scope (Tm n)
 scopeExp (eType (AST.univ x)) Δ = univ <$> parseUniv x
 scopeExp (eId (ident x))      Δ = var <$> lookup x Δ
 scopeExp (eApp e f)           Δ = liftM2 app (scopeExp e Δ) (scopeExp f Δ)
-scopeExp (eFun A B)           Δ = liftM2 (pi "_") (scopeExp A Δ) (wk <$> scopeExp B Δ)
+scopeExp (eFun A B)           Δ = liftM2 (pi "_") (scopeExp A Δ) (scopeExp B ("_" ∷ Δ))
 scopeExp (ePi (ident x) A B)  Δ = liftM2 (pi x) (scopeExp A Δ) (scopeExp B (x ∷ Δ))
 scopeExp (eAbs xs e)          Δ = scopeAbs xs e Δ
   where
@@ -93,16 +93,16 @@ scopeCheck (d ∷ ds) = scopeDef d =<< scopeCheck ds
 ------------------------------------------------------------------------
 -- Printing (unscope)
 
-printExp : Cxt n → Tm n → Exp
-printExp Δ (univ 0)   = eType (AST.univ ("Set"))
-printExp Δ (univ l)   = eType (AST.univ ("Set" <> printNat l))
-printExp Δ (var x)    = eId (ident (Vec.lookup Δ x))
-printExp Δ (abs y t)  = eAbs [ ident y ] (printExp (y ∷ Δ) t) -- todo: freshen y
-printExp Δ (app t u)  = eApp (printExp Δ t) (printExp Δ u)
-printExp Δ (pi y A B) = ePi (ident y) (printExp Δ A) (printExp (y ∷ Δ) B) -- todo: freshen y
+printTm : Cxt n → Tm n → Exp
+printTm Δ (univ 0)   = eType (AST.univ ("Set"))
+printTm Δ (univ l)   = eType (AST.univ ("Set" <> printNat l))
+printTm Δ (var x)    = eId (ident (Vec.lookup Δ x))
+printTm Δ (abs y t)  = eAbs [ ident y ] (printTm (y ∷ Δ) t) -- todo: freshen y
+printTm Δ (app t u)  = eApp (printTm Δ t) (printTm Δ u)
+printTm Δ (pi y A B) = ePi (ident y) (printTm Δ A) (printTm (y ∷ Δ) B) -- todo: freshen y
 
 printDef : Cxt n → Def n → Nice.Def
-printDef Δ (def x type term) = Nice.def x (printExp Δ type) (Maybe.map (printExp Δ) term)
+printDef Δ (def x type term) = Nice.def x (printTm Δ type) (Maybe.map (printTm Δ) term)
 
 printDefs : Defs n → Vec Nice.Def n
 printDefs ε = []

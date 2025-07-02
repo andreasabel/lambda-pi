@@ -32,7 +32,7 @@ printNiceError (definitionWithoutType x) = "Definition without type: " <> x
 open ErrorMonad {E = NiceError} public using () renaming (Error to Nice)
 
 private
-  open ErrorMonad {E = NiceError} using (Error; fail; return; _>>=_; _>=>_)
+  open ErrorMonad {E = NiceError} using (fail; return; _>>=_; _>=>_)
 
   variable
     n : ℕ
@@ -84,4 +84,4 @@ unNiceDef (def x e (just f)) = dDecl (ident x) e ∷ dDef (ident x) f ∷ []
 unNiceDef (def x e nothing) = [ dAx (block [ dDecl (ident x) e ]) ]
 
 unNice : Defs → List Decl
-unNice (_ , v) = Vec.foldl (λ _ → List Decl) (λ ds d → ds ++ unNiceDef d) [] v
+unNice (_ , v) = Vec.foldl (λ _ → List Decl) (λ ds d → unNiceDef d ++ ds) [] v

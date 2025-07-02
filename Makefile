@@ -3,7 +3,11 @@ test:
 	stack run -- examples/nat.agda
 
 .PHONY: fail
-fail: fail-scope
+fail: fail-type
+
+.PHONY: fail-type
+fail-type:
+	-stack run -- examples/fail/self-app.agda
 
 .PHONY: fail-scope
 fail-scope:

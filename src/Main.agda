@@ -5,7 +5,7 @@ open import LamPi.AST     using (Decl; printListDecl)
 open import LamPi.Parser  using (Err; ok; bad; parseListDecl)
 open import Nice as _     using (Nice; nice; unNice; printNiceError)
 open import Scope as _    using (Scope; scopeCheck; printScopeError; printDefs)
--- open import TypeChecker   using (printError; module CheckDecl)
+open import TypeChecker   using (checkDefs; printTypeError)
 
 check : String → IO ⊤
 check contents = do
@@ -23,6 +23,8 @@ check contents = do
           putStrLn (printNiceError err)
           exitFailure
         (ErrorMonad.ok (n , prg')) → do
+          putStrLn "NICIFIER PRODUCED:"
+          putStrLn (printListDecl (unNice (n , prg')))
           case scopeCheck prg' of λ where
             (fail err) → do
               putStrLn "SCOPE ERROR"
@@ -32,8 +34,19 @@ check contents = do
               putStrLn (printScopeError err)
               exitFailure
             (ErrorMonad.ok prg'') → do
-              putStrLn "SCOPE SUCCESS"
+              putStrLn "SCOPE CHECKER PRODUCED:"
               putStrLn (printListDecl (unNice (n , printDefs prg'')))
+              case checkDefs prg'' of λ where
+                (fail err) → do
+                  putStrLn "TYPE ERROR"
+                  putStrLn (printListDecl (unNice (n , printDefs prg'')))
+                  putStrLn "The type error is:"
+                  putStrLn (printTypeError err)
+                  exitFailure
+                (ErrorMonad.ok _) → do
+                  putStrLn "TYPE CHECKING SUCCESS"
+                  -- putStrLn (printListDecl (unNice (n , printDefs prg'')))
+                  -- putStrLn "SUCCESS"
 
   where
   open IOMonad

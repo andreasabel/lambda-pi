@@ -10,13 +10,16 @@ Var = Fin
 -- Names are suggestions how to print an index
 Name = String
 
+-- Universe levels are natural numbers
+Lvl = ℕ
+
 variable
   n m : ℕ
 
 -- Terms
 
 data Tm (n : ℕ) : Set where
-  univ : (l : ℕ) → Tm n
+  univ : (l : Lvl) → Tm n
   var : (x : Var n) → Tm n
   abs : (y : Name) (t : Tm (suc n)) → Tm n
   app : (t u : Tm n) → Tm n
@@ -71,10 +74,10 @@ subst1 u = sub (sgS u)
 
 {-# TERMINATING #-}
 mutual
-  whd : Tm n → Tm n
-  whd (app t u) = apply (whd t) u
-  whd t = t
+  whnf : Tm n → Tm n
+  whnf (app t u) = apply (whnf t) u
+  whnf t = t
 
   apply : Tm n → Tm n → Tm n
-  apply (abs _ t) u = whd (subst1 u t)
+  apply (abs _ t) u = whnf (subst1 u t)
   apply t u = app t u
