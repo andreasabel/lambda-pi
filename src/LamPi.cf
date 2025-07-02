@@ -9,11 +9,11 @@ layout "postulate";
 entrypoints [Decl];
 
 Block. Block ::= "{" [Decl] "}" ;
-terminator Decl ";";
+separator Decl ";";
 
 DAx.   Decl ::= "postulate" Block;
 DDecl. Decl ::= Ident ":" Exp ;
-Def.   Decl ::= Ident "=" Exp ;
+DDef.  Decl ::= Ident "=" Exp ;
 
 -- Expressions
 
@@ -30,3 +30,6 @@ separator nonempty Ident "";
 -- Universes
 
 token Univ {"Set"} (digit *);
+
+comment "--";
+comment "{-" "-}";

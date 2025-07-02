@@ -33,6 +33,7 @@ open import Data.Product       public using (∃; ∃₂; _×_; _,_; proj₁; pr
 open import Data.String.Base   public using (String) renaming (_++_ to _<>_)
 open import Data.Sum.Base      public using (_⊎_; inj₁; inj₂)
 open import Data.Unit.Base     public using (⊤)
+open import Data.Vec.Base      public using (Vec; []; _∷_) hiding (module Vec)
 
 open import Function           public using (id; _∘_; _∘′_; _$_; case_of_)
 open import Level              public using (Level; _⊔_)
@@ -102,6 +103,9 @@ module Integer where
 
   postulate div : (i j : ℤ) → ℤ
   {-# COMPILE GHC div = div #-}
+
+module Vec where
+  open import Data.Vec.Base public
 
 -- Sublists.
 
@@ -393,6 +397,9 @@ module ErrorMonad {e} {E : Set e} where
   _>>=_ : ∀{a b} {A : Set a} {B : Set b} → Error A → (A → Error B) → Error B
   fail err >>= k = fail err
   ok   a   >>= k = k a
+
+  _>=>_ : ∀{a b c} {A : Set a} {B : Set b} {C : Set c} → (A → Error B) → (B → Error C) → A → Error C
+  (f >=> g) a = f a >>= g
 
   _>>_ : ∀{b} {B : Set b} → Error ⊤ → Error B → Error B
   m >> m' = m >>= λ _ → m'

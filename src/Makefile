@@ -11,6 +11,7 @@ ALEX_OPTS  = --ghc
 AGDA_GOAL = MAlonzo/Code/Main.hs
 AGDA_FILES = \
   Main.agda \
+  Nice.agda \
   Syntax.agda \
   Scope.agda
 
