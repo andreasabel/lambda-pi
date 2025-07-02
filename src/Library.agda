@@ -26,7 +26,7 @@ open import Data.List.Base     public using (List; []; _∷_; [_]; _++_) hiding 
 open import Data.List.NonEmpty public using (List⁺; _∷_; _∷⁺_) hiding (module List⁺)
 
 open import Data.Fin.Base      public using (Fin; zero; suc) hiding (module Fin)
-open import Data.Maybe.Base    public using (Maybe; nothing; just)
+open import Data.Maybe.Base    public using (Maybe; nothing; just) hiding (module Maybe)
 open import Data.Nat.Base      public using (ℕ; zero; suc; _+_; _≤_; s≤s) hiding (module ℕ)
 open import Data.Product       public using (∃; ∃₂; _×_; _,_; proj₁; proj₂; map₂; uncurry)
   renaming (map to ∃-map)
@@ -107,6 +107,9 @@ module Integer where
 
 module Vec where
   open import Data.Vec.Base public
+
+module Maybe where
+  open import Data.Maybe.Base public
 
 -- Sublists.
 

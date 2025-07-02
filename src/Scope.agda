@@ -89,3 +89,21 @@ scopeDef (Nice.def x e m) ds = (ds ▷_) <$> liftM2 (def x) (scopeExp e Δ) (sco
 scopeCheck : Vec Nice.Def n → Scope (Defs n)
 scopeCheck [] = return ε
 scopeCheck (d ∷ ds) = scopeDef d =<< scopeCheck ds
+
+------------------------------------------------------------------------
+-- Printing (unscope)
+
+printExp : Cxt n → Tm n → Exp
+printExp Δ (univ 0)   = eType (AST.univ ("Set"))
+printExp Δ (univ l)   = eType (AST.univ ("Set" <> printNat l))
+printExp Δ (var x)    = eId (ident (Vec.lookup Δ x))
+printExp Δ (abs y t)  = eAbs [ ident y ] (printExp (y ∷ Δ) t) -- todo: freshen y
+printExp Δ (app t u)  = eApp (printExp Δ t) (printExp Δ u)
+printExp Δ (pi y A B) = ePi (ident y) (printExp Δ A) (printExp (y ∷ Δ) B) -- todo: freshen y
+
+printDef : Cxt n → Def n → Nice.Def
+printDef Δ (def x type term) = Nice.def x (printExp Δ type) (Maybe.map (printExp Δ) term)
+
+printDefs : Defs n → Vec Nice.Def n
+printDefs ε = []
+printDefs (ds ▷ d) = printDef (cxt ds) d ∷ printDefs ds
