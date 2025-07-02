@@ -4,7 +4,7 @@
 
 module Library where
 
-open import Agda.Builtin.Equality.Rewrite
+-- open import Agda.Builtin.Equality.Rewrite
 open import Agda.Builtin.Float public using (Float) renaming
   ( primFloatEquality to _==?ᵈ_
   ; primFloatLess     to _<?ᵈ_
@@ -50,7 +50,7 @@ open import Relation.Binary.PropositionalEquality public using (_≗_; _≡_; re
 open import Relation.Nullary.Decidable            public using (⌊_⌋) renaming (map′ to mapDec)
 
 open import Data.Nat.Properties                   public using (+-identityʳ; +-suc)
-{-# REWRITE +-identityʳ +-suc #-}
+-- {-# REWRITE +-identityʳ +-suc #-}
 
 open import Data.List.Membership.Propositional              public using (_∈_; _∉_)
 open import Data.List.Relation.Unary.All                    public using ([]; _∷_; updateAt)
@@ -87,6 +87,7 @@ module ℕ where
 
 module Fin where
 
+  open import Data.Fin.Base public using (_↑ʳ_)
   open import Data.Fin.Properties public using (_≟_)
 
   fromℕ : (n : ℕ) (m : ℕ) → Fin (suc (n + m))

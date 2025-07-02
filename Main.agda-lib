@@ -1,4 +1,4 @@
 include: src
 depend: standard-library
-flags:
-  --rewriting
+-- flags:
+--   --rewriting
