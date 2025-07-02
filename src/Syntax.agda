@@ -20,34 +20,29 @@ variable
 
 data Tm (n : ℕ) : Set where
   univ : (l : Lvl) → Tm n
-  var : (x : Var n) → Tm n
-  abs : (y : Name) (t : Tm (suc n)) → Tm n
-  app : (t u : Tm n) → Tm n
-  pi  : (y : Name) (A : Tm n) (B : Tm (suc n)) → Tm n
+  var  : (x : Var n) → Tm n
+  abs  : (y : Name) (t : Tm (suc n)) → Tm n
+  app  : (t u : Tm n) → Tm n
+  pi   : (y : Name) (A : Tm n) (B : Tm (suc n)) → Tm n
 
 -- Substitutions
 
 data Sub : (n m : ℕ) → Set where
-  ε     : Sub n 0
-  idS   : Sub n n
   baseS : (n : ℕ) → Sub (n + m) m
   liftS : (σ : Sub n m) → Sub (suc n) (suc m)
   _▷_   : (σ : Sub n m) (t : Tm n) → Sub n (suc m)
 
--- -- Wrong:
--- weakS : (n : ℕ) (m : ℕ) → Sub (n + m) n
--- weakS zero    m = ε
--- weakS (suc n) m = weakS n (suc m) ▷ var (Fin.fromℕ n m)
+ε : Sub (n + 0) 0
+ε = baseS _
 
+idS : Sub n n
+idS = baseS _
 
 -- performing a substitution
 
 {-# TERMINATING #-}
 mutual
-
   lookup : Sub n m → Var m → Tm n
-  lookup ε ()
-  lookup idS       x       = var x
   lookup (baseS n) x       = var (n Fin.↑ʳ x)
   lookup (liftS σ) zero    = var zero
   lookup (liftS σ) (suc x) = wk (lookup σ x)
@@ -61,21 +56,12 @@ mutual
   sub σ (app t u)  = app (sub σ t) (sub σ u)
   sub σ (pi y A B) = pi y (sub σ A) (sub (liftS σ) B)
 
-  -- liftS : Sub n m → Sub (suc n) (suc m)
-  -- liftS σ = wkS σ ▷ var zero
-
   wk : Tm n → Tm (suc n)
   wk t = sub (baseS _) t
 
-  -- idS : (n : ℕ) → Sub n n
-  -- idS zero = ε
-  -- idS (suc n) = wkS (idS n) ▷ var zero
-
 wkS : Sub n m → Sub (suc n) m
-wkS idS = baseS _
-wkS (baseS n) = baseS _
+wkS (baseS n) = baseS (suc n)
 wkS (liftS σ) = liftS (wkS σ)
-wkS ε = ε
 wkS (σ ▷ t) = wkS σ ▷ wk t
 
 sgS : Tm n → Sub n (suc n)
