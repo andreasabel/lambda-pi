@@ -1,3 +1,6 @@
+.PHONY: default
+default: build test
+
 .PHONY: test fail
 test:
 	stack run -- examples/nat.agda
@@ -21,5 +24,6 @@ fail-nice:
 .PHONY: build
 build:
 	make -C src
+	stack build
 
 # EOF
