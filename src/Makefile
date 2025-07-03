@@ -8,7 +8,7 @@ HAPPY_OPTS = --array --info --ghc --coerce
 ALEX       = alex
 ALEX_OPTS  = --ghc
 
-AGDA_GOAL = MAlonzo/Code/Main.hs
+AGDA_GOAL = MAlonzo/Code/Main.hs MAlonzo/Code/Syntax.hs MAlonzo/Code/TypeChecker.hs
 AGDA_FILES = \
   Main.agda \
   Nice.agda \

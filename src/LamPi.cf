@@ -13,7 +13,9 @@ separator Decl ";";
 
 DAx.   Decl ::= "postulate" Block;
 DDecl. Decl ::= Ident ":" Exp ;
-DDef.  Decl ::= Ident "=" Exp ;
+DDef.  Decl ::= [Ident] "=" Exp ;
+  -- The first name in [Ident] is the name of the defintion
+  -- the rest are parameters to be lambda-abstracted.
 
 -- Expressions
 
