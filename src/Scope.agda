@@ -8,8 +8,11 @@ open import LamPi.AST as AST using (Exp; Ident); open Exp; open Ident
 open import Syntax using (Name; Tm; Var; wk); open Tm
 import Nice
 
-variable
-  n : ℕ
+private
+  variable
+    n : ℕ
+
+-- Structure returned by scope checker
 
 record Def (n : ℕ) : Set where
   constructor def
@@ -22,6 +25,8 @@ data Defs : (n : ℕ) → Set where
   ε : Defs 0
   _▷_ : Defs n → Def n → Defs (suc n)
 
+-- Scope checker errors
+
 data ScopeError : Set where
   notInScope  : String → _
   notUniverse : String → _
@@ -31,6 +36,8 @@ printScopeError : ScopeError → String
 printScopeError (notInScope x)  = "Not in scope: " <> x
 printScopeError (notUniverse x) = "Not a valid universe: " <> x
 printScopeError impossible      = "Panic! Internal error"
+
+-- Scope checker monad
 
 open ErrorMonad {E = ScopeError} public using () renaming (Error to Scope)
 open ErrorMonad {E = ScopeError} using (fail; return; _>>=_; _>=>_; _=<<_; _<$>_; liftM2)

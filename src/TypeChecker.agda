@@ -7,6 +7,8 @@ open import Syntax hiding (lookup)
 open import Scope as A using (Def; Defs; cxt; printTm)
 open import LamPi.AST as AST using (Exp; printExp)
 
+-- Type checker errors
+
 data TypeError : Set where
   notAType     : Exp → _
   notAUniverse : Exp → _
@@ -26,6 +28,8 @@ printTypeError (notInferable e)   = "Not an inferable term: " <> printExp e
 printTypeError (notLeqLevels l l') = "Level " <> printNat l <> " is not less or equal to " <> printNat l'
 printTypeError (notSubtype A B)   = printExp A <> " is not a subtype of " <> printExp B
 printTypeError (notEquals A B)    = printExp A <> " is not equal to " <> printExp B
+
+-- Type checker monad
 
 open ErrorMonad {E = TypeError} public using () renaming (Error to TC)
 open ErrorMonad {E = TypeError} using (fail; return; _>>=_; _>>_; _>=>_; _=<<_; _<$>_; liftM2)
@@ -84,31 +88,6 @@ toSubst : Defs n → Sub n n
 toSubst Defs.ε = ε
 toSubst (Σ Defs.▷ d) = wkS (toSubst Σ) ▷ toTm d
 
--- toTm : Sub n n → Def n → Tm (suc n)
--- toTm σ (A.def _ _ (just t)) = wk (sub σ t)
--- toTm σ (A.def _ _ nothing) = var zero
-
--- toSubst : Defs n → Sub n n
--- toSubst Defs.ε = ε
--- toSubst (Σ Defs.▷ d) = wkS σ ▷ toTm σ d
---   where
---     σ = toSubst Σ
-
--- -- Close a def wrt. an already flattened list of defs
-
--- closeDef : Defs n → Def n → Def n
--- closeDef Σ (A.def x A m) = A.def x (sub σ A) (Maybe.map (sub σ) m)
---   where
---     σ = toSubst Σ
-
--- -- Transform a list of definitions such that each is independent of the previous ones
-
--- flatten : Defs n → Defs n
--- flatten Defs.ε        = Defs.ε
--- flatten (ds Defs.▷ d) = Σ Defs.▷ closeDef Σ d
---   where
---     Σ = flatten ds
-
 -- Replace in a term all defined things by their definition.
 -- Precondition: Σ is already flattened.
 
@@ -137,6 +116,8 @@ leqLevel l l' with l ℕ.≤? l'
 ... | yes _ = return _
 ... | no _  = fail (notLeqLevels l l')
 
+-- Level equality
+
 equalLevel : (l l' : Lvl) → TC ⊤
 equalLevel l l' with l ℕ.≟ l'
 ... | yes _ = return _
@@ -158,11 +139,6 @@ mutual
   subType Σ A B = do
     _ ← equalInferable Σ A B
     return _
-
-  -- isUniv : Defs n → Tm n → TC Lvl
-  -- isUniv Σ A = case whnf A of λ where
-  --   (univ l) → return l
-  --   _ → notUniverse Σ A
 
   -- Structural equality.
   --
@@ -208,7 +184,7 @@ mutual
 -- Checking terms and types
 
 mutual
-  -- Check a type and infer its universe level
+  -- Check a type and infer its universe level.
 
   checkType : Defs n → Tm n → TC Lvl
   checkType Σ (univ l)    = return (suc l)
@@ -216,6 +192,8 @@ mutual
   checkType Σ t@(abs _ _) = notType Σ t
   checkType Σ t@(app _ _) = inferType Σ t
   checkType Σ (pi y A B)  = checkPiType Σ y A B
+
+  -- Check a pi type and infer its universe level.
 
   checkPiType : Defs n → Name → Tm n → Tm (suc n) → TC Lvl
   checkPiType Σ y A B = do
@@ -247,20 +225,15 @@ mutual
     return (subst1 (close Σ u) B)
   infer Σ (pi y A B) = univ <$> checkPiType Σ y A B
 
+  -- Check a term against an already checked type.
+
   check : (Σ : Defs n) (t : Tm n) (C : Tm n) → TC ⊤
   check Σ (abs y t) C = case whnf C of λ where
-    (pi x A B) → check (ext Σ y A) t B  -- need not close A as it is already
+    (pi x A B) → check (ext Σ y A) t B  -- need not close A as it is already closed
     _ → notFunctionType Σ C
   check Σ t C = checkInferable Σ t C
-  -- check Σ (univ l) A = do
-  --   l' ← isUniv Σ A
-  --   leqLevel (suc l) l'
-  -- check Σ t@(var _)   A = {!!}
-  -- check Σ t@(app _ _) A = {!!}
-  -- check Σ (pi y A B) U = do
-  --   l' ← isUniv Σ U
-  --   l  ← checkPiType Σ y A B
-  --   leqLevel l l'
+
+  -- Check an inferable term against an already checked type.
 
   checkInferable : (Σ : Defs n) (t : Tm n) (A : Tm n) → TC ⊤
   checkInferable Σ t B = do
@@ -270,7 +243,8 @@ mutual
 ---------------------------------------------------------------------------
 -- Checking definitions
 
--- Check a definition and return its closed form
+-- Check a definition and return its closed form.
+
 checkDef : Defs n → Def n → TC (Def n)
 checkDef Σ (A.def x A nothing) = do
   _ ← checkType Σ A
@@ -281,7 +255,8 @@ checkDef Σ (A.def x A (just t)) = do
   check Σ t A'
   return (A.def x A' (just (close Σ t)))
 
--- Check definitions and flatten them
+-- Check definitions and flatten them.
+
 checkDefs : Defs n → TC (Defs n)
 checkDefs Defs.ε = return Defs.ε
 checkDefs (ds Defs.▷ d) = do

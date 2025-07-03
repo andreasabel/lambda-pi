@@ -2,14 +2,14 @@
 
 module Nice where
 
--- We first preprocess the list of declarations into a flat snoc-list of definitions
-
 open import Library
 
 open import LamPi.AST using (Decl; Block; Ident; Exp)
 open Decl
 open Block
 open Ident
+
+-- Structure returned by nicifier
 
 record Def : Set where
   constructor def
@@ -19,6 +19,8 @@ record Def : Set where
     term : Maybe Exp -- nothing if postulate
 
 Defs = ∃ (Vec Def)
+
+-- Nicifier errors
 
 data NiceError : Set where
   definedPostulate      : String → _
@@ -30,7 +32,11 @@ printNiceError (definedPostulate x)      = "Postulate with definition: " <> x
 printNiceError (definitionWithoutType x) = "Definition without type: " <> x
 printNiceError impossible                = "Panic! Internal error"
 
+-- Nicifier monad
+
 open ErrorMonad {E = NiceError} public using () renaming (Error to Nice)
+
+-- Nicifier implementation
 
 private
   open ErrorMonad {E = NiceError} using (fail; return; _>>=_; _>=>_)
@@ -75,7 +81,6 @@ private
     -- Process the statement after a given declaration
 
     declaration : (x : String) (e : Exp) (ds : List Decl) → Defs → Nice Defs
-    declaration x e [] = return ∘ addPostulate x e
     declaration x e (dDef (ident y ∷ ys) f ∷ ds) with x String.≟ y
     ... | yes _ = group ds ∘ addDefinition x e (abs ys f)
     ... | no _  = λ _ → fail (definitionWithoutType y)
@@ -86,6 +91,8 @@ private
 
 nice : List Decl → Nice Defs
 nice ds = group ds (0 , [])
+
+-- Converting nice syntax back to parsed syntax
 
 unNiceDef : Def → List Decl
 unNiceDef (def x e (just f)) = dDecl (ident x) e ∷ dDef [ ident x ] f ∷ []

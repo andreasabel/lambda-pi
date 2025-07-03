@@ -8,21 +8,28 @@ HAPPY_OPTS = --array --info --ghc --coerce
 ALEX       = alex
 ALEX_OPTS  = --ghc
 
-AGDA_GOAL = MAlonzo/Code/Main.hs MAlonzo/Code/Syntax.hs MAlonzo/Code/TypeChecker.hs
+AGDA_GOAL = \
+  MAlonzo/Code/Main.hs
+
+AGDA_GEN = \
+  MAlonzo/Code/Nice.hs \
+  MAlonzo/Code/Scope.hs \
+  MAlonzo/Code/Syntax.hs \
+  MAlonzo/Code/TypeChecker.hs \
+  $(AGDA_GOAL)
+
 AGDA_FILES = \
   Main.agda \
   Nice.agda \
   Syntax.agda \
   Scope.agda
 
-# List of goals not corresponding to file names.
-
-.PHONY : all clean distclean
-
 # Default goal.
 
+.PHONY: all
 all : LamPi/Test $(AGDA_GOAL)
 
+.PHONY: test
 test: LamPi/Test
 	$@ ../examples/nat.agda
 
@@ -47,9 +54,15 @@ LamPi/Test : LamPi/Abs.hs LamPi/Layout.hs LamPi/Lex.hs LamPi/Par.hs LamPi/Print.
 
 # Rules for cleaning generated files.
 
-clean :
+.PHONY: clean
+clean:
+	-rm $(AGDA_GEN)
+
+.PHONY: clean-parser
+clean-parser:
 	-rm -f LamPi/*.hi LamPi/*.o LamPi/*.log LamPi/*.aux LamPi/*.dvi
 
+.PHONY: distclean
 distclean : clean
 	-rm -f LamPi/Abs.hs LamPi/Abs.hs.bak LamPi/ComposOp.hs LamPi/ComposOp.hs.bak LamPi/Doc.txt LamPi/Doc.txt.bak LamPi/ErrM.hs LamPi/ErrM.hs.bak LamPi/Layout.hs LamPi/Layout.hs.bak LamPi/Lex.x LamPi/Lex.x.bak LamPi/Par.y LamPi/Par.y.bak LamPi/Print.hs LamPi/Print.hs.bak LamPi/Skel.hs LamPi/Skel.hs.bak LamPi/Test.hs LamPi/Test.hs.bak LamPi/XML.hs LamPi/XML.hs.bak LamPi/AST.agda LamPi/AST.agda.bak LamPi/Parser.agda LamPi/Parser.agda.bak LamPi/IOLib.agda LamPi/IOLib.agda.bak LamPi/Main.agda LamPi/Main.agda.bak LamPi/LamPi.dtd LamPi/LamPi.dtd.bak LamPi/Test LamPi/Lex.hs LamPi/Par.hs LamPi/Par.info LamPi/ParData.hs Makefile
 	-rmdir -p LamPi/
