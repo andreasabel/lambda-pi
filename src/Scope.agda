@@ -3,12 +3,9 @@
 module Scope where
 
 open import Library
-open import Data.String using (_≟_)
-
-Name = String
 
 open import LamPi.AST as AST using (Exp; Ident); open Exp; open Ident
-open import Syntax using (Tm; Var; wk); open Tm
+open import Syntax using (Name; Tm; Var; wk); open Tm
 import Nice
 
 variable
@@ -58,7 +55,7 @@ cxt (ds ▷ def x _ _) = x ∷ cxt ds
 
 lookup : String → Cxt n → Scope (Var n)
 lookup x [] = fail (notInScope x)
-lookup x (y ∷ Δ) with x ≟ y
+lookup x (y ∷ Δ) with x String.≟ y
 ... | yes _ = return zero
 ... | no _  = suc <$> lookup x Δ
 
@@ -75,7 +72,7 @@ scopeExp (ePi (ident x ∷ xs) A B) Δ = scopePi Δ x xs =<< scopeExp A Δ
   scopePi : Cxt n → String → List Ident → Tm n → Scope (Tm n)
   scopePi Δ x []             A = pi x A <$> scopeExp B (x ∷ Δ)
   scopePi Δ x (ident y ∷ ys) A = pi x A <$> scopePi (x ∷ Δ) y ys (wk A)
-scopeExp (eAbs xs e)              Δ = scopeAbs xs e Δ
+scopeExp (eAbs xs e) Δ = scopeAbs xs e Δ
   where
   scopeAbs : (xs : List Ident) (e : Exp) (Δ : Cxt n) → Scope (Tm n)
   scopeAbs []             e Δ = scopeExp e Δ

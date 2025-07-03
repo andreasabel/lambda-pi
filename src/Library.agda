@@ -315,7 +315,7 @@ module List⁺ where
   All P xs = List.All P (toList xs)
 
 module String where
-  open import Data.String.Base public
+  open import Data.String public
 
   drop : ℕ → String → String
   drop zero s = s

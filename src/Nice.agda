@@ -5,7 +5,6 @@ module Nice where
 -- We first preprocess the list of declarations into a flat snoc-list of definitions
 
 open import Library
-open import Data.String as String using (_≟_)
 
 open import LamPi.AST using (Decl; Block; Ident; Exp)
 open Decl
@@ -77,7 +76,7 @@ private
 
     declaration : (x : String) (e : Exp) (ds : List Decl) → Defs → Nice Defs
     declaration x e [] = return ∘ addPostulate x e
-    declaration x e (dDef (ident y ∷ ys) f ∷ ds) with x ≟ y
+    declaration x e (dDef (ident y ∷ ys) f ∷ ds) with x String.≟ y
     ... | yes _ = group ds ∘ addDefinition x e (abs ys f)
     ... | no _  = λ _ → fail (definitionWithoutType y)
     declaration x e (dDef [] f ∷ ds) _ = fail impossible
