@@ -28,10 +28,12 @@ data Defs : (n : ℕ) → Set where
 data ScopeError : Set where
   notInScope  : String → _
   notUniverse : String → _
+  impossible  : _
 
 printScopeError : ScopeError → String
 printScopeError (notInScope x)  = "Not in scope: " <> x
 printScopeError (notUniverse x) = "Not a valid universe: " <> x
+printScopeError impossible      = "Panic! Internal error"
 
 open ErrorMonad {E = ScopeError} public using () renaming (Error to Scope)
 open ErrorMonad {E = ScopeError} using (fail; return; _>>=_; _>=>_; _=<<_; _<$>_; liftM2)
@@ -63,12 +65,17 @@ lookup x (y ∷ Δ) with x ≟ y
 -- Scope check an expression and return a de Bruijn term
 
 scopeExp : Exp → Cxt n → Scope (Tm n)
-scopeExp (eType (AST.univ x)) Δ = univ <$> parseUniv x
-scopeExp (eId (ident x))      Δ = var <$> lookup x Δ
-scopeExp (eApp e f)           Δ = liftM2 app (scopeExp e Δ) (scopeExp f Δ)
-scopeExp (eFun A B)           Δ = liftM2 (pi "_") (scopeExp A Δ) (scopeExp B ("_" ∷ Δ))
-scopeExp (ePi (ident x) A B)  Δ = liftM2 (pi x) (scopeExp A Δ) (scopeExp B (x ∷ Δ))
-scopeExp (eAbs xs e)          Δ = scopeAbs xs e Δ
+scopeExp (eType (AST.univ x))     Δ = univ <$> parseUniv x
+scopeExp (eId (ident x))          Δ = var <$> lookup x Δ
+scopeExp (eApp e f)               Δ = liftM2 app (scopeExp e Δ) (scopeExp f Δ)
+scopeExp (eFun A B)               Δ = liftM2 (pi "_") (scopeExp A Δ) (scopeExp B ("_" ∷ Δ))
+scopeExp (ePi [] A B)             Δ = fail impossible
+scopeExp (ePi (ident x ∷ xs) A B) Δ = scopePi Δ x xs =<< scopeExp A Δ
+  where
+  scopePi : Cxt n → String → List Ident → Tm n → Scope (Tm n)
+  scopePi Δ x []             A = pi x A <$> scopeExp B (x ∷ Δ)
+  scopePi Δ x (ident y ∷ ys) A = pi x A <$> scopePi (x ∷ Δ) y ys (wk A)
+scopeExp (eAbs xs e)              Δ = scopeAbs xs e Δ
   where
   scopeAbs : (xs : List Ident) (e : Exp) (Δ : Cxt n) → Scope (Tm n)
   scopeAbs []             e Δ = scopeExp e Δ
@@ -99,7 +106,7 @@ printTm Δ (univ l)   = eType (AST.univ ("Set" <> printNat l))
 printTm Δ (var x)    = eId (ident (Vec.lookup Δ x))
 printTm Δ (abs y t)  = eAbs [ ident y ] (printTm (y ∷ Δ) t) -- todo: freshen y
 printTm Δ (app t u)  = eApp (printTm Δ t) (printTm Δ u)
-printTm Δ (pi y A B) = ePi (ident y) (printTm Δ A) (printTm (y ∷ Δ) B) -- todo: freshen y
+printTm Δ (pi y A B) = ePi [ ident y ] (printTm Δ A) (printTm (y ∷ Δ) B) -- todo: freshen y
 
 printDef : Cxt n → Def n → Nice.Def
 printDef Δ (def x type term) = Nice.def x (printTm Δ type) (Maybe.map (printTm Δ) term)

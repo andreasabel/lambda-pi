@@ -24,7 +24,7 @@ EId.    Exp3 ::= Ident;
 EApp.   Exp2 ::= Exp2 Exp3;
 EFun.   Exp  ::= Exp1 "→" Exp;
 EAbs.   Exp  ::= "λ" [Ident] "→" Exp;
-EPi.    Exp  ::= "(" Ident ":" Exp ")" "→" Exp;
+EPi.    Exp  ::= "(" [Ident] ":" Exp ")" "→" Exp;
 
 coercions Exp 3;
 separator nonempty Ident "";
